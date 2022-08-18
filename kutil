@@ -66,6 +66,7 @@ arguments:
             make clean
             ;;
         i)
+            validate_permissions
             cp -v $(find /boot -name "vmlinuz*" | sed -e 's/.*\.old//') "${kernel_installation_path}"
             ;;
     v)
