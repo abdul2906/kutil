@@ -5,7 +5,7 @@ A wrapper utility script for compiling the Linux kernel.
 ```
 usage: kutil [-m,-b,-c,-i,-v,-h]
 
-Wrapper script for Kernel make.
+A wrapper utility script for compiling the Linux kernel. 
 
 arguments:
     -m              Modify kernel configuration using menuconfig
