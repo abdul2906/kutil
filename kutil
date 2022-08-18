@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# Author: abdul2906
+# LICENSE: MIT
+
+shopt -s extglob
+set -o errexit
+function handle_exit() {
+    local error_code="$?"
+    [ "$error_code" = 0 ] && return
+
+    printf "\nSubcommand failed. Aborting.\n"
+}
+trap handle_exit EXIT
+
+function validate_permissions() {
+    if [ "$EUID" != 0 ]; then
+        printf "Root permissions are required for this action.\n"
+        exit 13
+    fi
+    . /etc/kutil/configuration
+}
+
+while getopts cmhbiv arg; do
+    case "$arg" in
+        h) 
+            printf "
+usage: kutil [-n,-b,-c,-i,-v,-h]
+
+Wrapper script for Kernel make.
+
+arguments:
+    -m              Modify kernel configuration using menuconfig
+    -b              Build and install current kernel
+    -c              Clean the kernel directory
+    -i              Install kernel image to /boot/efi
+    -v              Verbose output 
+    -h              Print this dialog
+
+"
+            ;;
+        m)
+            validate_permissions
+            cd /usr/src/linux 
+            if [[ "${use_llvm}" == 1 ]];then
+                make menuconfig LLVM=1
+            else
+                make menuconfig
+            fi
+            ;;
+        b)
+            validate_permissions
+            cd /usr/src/linux
+            if [[ "${use_llvm}" == 1 ]];then 
+                make -j"$(grep -c ^processor /proc/cpuinfo)" CC=clang LLVM=1
+            else
+                make -j"$(grep -c ^processor /proc/cpuinfo)"
+            fi
+            make modules_install
+            make install
+            [[ "${gentoo_module_rebuild}" == 1 ]] && emerge @module-rebuild
+            ;;
+        c)
+            validate_permissions
+            cd /usr/src/linux
+            make clean
+            ;;
+        i)
+            cp -v $(find /boot -name "vmlinuz*" | sed -e 's/.*\.old//') "${kernel_installation_path}"
+            ;;
+    v)
+            . /etc/kutil/configuration
+            [[ "${use_llvm}" == 1 ]] && echo "use_llvm=1" || echo "use_llvm=0"
+            echo "source_path=${source_path}"
+            [[ "${gentoo_module_rebuild}" == 1 ]] && echo "gentoo_module_rebuild=1" || echo "gentoo_module_rebuild=0"
+            echo "kernel_installation_path=${kernel_installation_path}"
+            ;;
+        *)
+            ;;
+    esac
+done
+

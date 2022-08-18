@@ -1,0 +1,4 @@
+use_llvm=0
+source_path=/usr/src/linux
+gentoo_module_rebuild=0
+kernel_installation_path=/boot/efi/linux.efi
